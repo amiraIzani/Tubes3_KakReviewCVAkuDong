@@ -1,0 +1,1 @@
+# ApplicantProfile & ApplicationDetail tables
