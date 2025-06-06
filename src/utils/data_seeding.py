@@ -29,93 +29,88 @@ def seed_with_dummy_data():
         return
 
     print(f"[SeedDummy] Looking for PDF files in: {DATA_DIR}")
-    file_count = 0
-    processed_files = 0
+    
+    # Get a list of all PDF files first
+    pdf_files = [f for f in os.listdir(DATA_DIR) if f.lower().endswith('.pdf')]
+    
+    if not pdf_files:
+        print("[SeedDummy] No PDF files found to process.")
+        return
 
-    for filename in os.listdir(DATA_DIR):
-        if not filename.lower().endswith('.pdf'):
-            continue
+    total_files_processed = 0
+    new_applications_created = 0
 
-        processed_files +=1
-        identifier = filename[:-4] # Use filename without .pdf as a unique id
+    for filename in pdf_files:
+        total_files_processed += 1
+        identifier = filename[:-4]
         full_pdf_path = os.path.join(DATA_DIR, filename)
-        print(f"\n[SeedDummy] Processing file: {filename}  -> identifier='{identifier}'")
+        
+        print(f"\n[SeedDummy] Processing file ({total_files_processed}/{len(pdf_files)}): {filename}")
 
+        # --- Step 1: Get or Create Applicant Profile ---
         applicant_id = None
-        existing_applicant_data = None
-
         try:
-            # Check if an applicant with this identifier already exists
-            existing_applicant_data = fetch_one(
+            existing_profile = fetch_one(
                 "SELECT applicant_id FROM ApplicantProfile WHERE identifier = %s",
                 (identifier,)
             )
-        except Exception as e:
-            print(f"  [ERROR] Failed to check ApplicantProfile for identifier '{identifier}': {e}")
-            continue
-
-        if existing_applicant_data:
-            applicant_id = existing_applicant_data[0] # The first column is applicant_id
-            print(f"  [Info] Identifier '{identifier}' already exists with applicant_id={applicant_id}.")
-        else:
-            # Generate fake data for a new applicant
-            full_name = fake.name()
-            first_name, last_name = _split_name(full_name)
-            email = fake.email()
-            phone_number = fake.phone_number()
-            address = fake.address().replace('\n', ', ')
-            date_of_birth_val = fake.date_of_birth(minimum_age=22, maximum_age=60)
-
-            print(f"  [Info] Creating new ApplicantProfile for identifier '{identifier}':")
-            print(f"    Name: {first_name} {last_name}, Email: {email}")
-
-            try:
+            if existing_profile:
+                applicant_id = existing_profile[0]
+                print(f"  [Info] Existing ApplicantProfile found with id={applicant_id}.")
+            else:
+                # Generate and insert a new applicant profile
+                first_name, last_name = _split_name(fake.name()) # Assuming _split_name helper exists
                 applicant_id = insert_applicant_profile(
                     first_name=first_name,
                     last_name=last_name,
-                    date_of_birth=date_of_birth_val,
-                    address=address,
-                    phone_number=phone_number,
-                    email=email,
+                    date_of_birth=fake.date_of_birth(minimum_age=22, maximum_age=60),
+                    address=fake.address().replace('\n', ', '),
+                    phone_number=fake.phone_number(),
+                    email=fake.email(),
                     identifier=identifier
                 )
-                if applicant_id is None:
-                    print(f"  [ERROR] Failed to insert ApplicantProfile for identifier '{identifier}', received None ID.")
-                    continue
-                print(f"  [Insert] New ApplicantProfile created: applicant_id={applicant_id}")
-            except Exception as e:
-                print(f"  [ERROR] Failed to insert ApplicantProfile for identifier '{identifier}': {e}")
-                continue
+                print(f"  [Insert] New ApplicantProfile created with id={applicant_id}.")
+        except Exception as e:
+            print(f"  [ERROR] Failed during ApplicantProfile processing: {e}")
+            continue # Skip to the next file
 
-        # Proceed to insert ApplicationDetail, whether applicant was existing or newly created
-        if applicant_id is not None:
-            try:
-                # Setting application_role to a fake job title or None for dummy data
+        # --- Step 2: Get or Create Application Detail (The Corrected Logic) ---
+        if applicant_id is None:
+            print(f"  [Warning] Skipping ApplicationDetail for '{filename}' as applicant_id was not determined.")
+            continue
+
+        try:
+            # check if application already exists
+            application_exists = fetch_one(
+                "SELECT detail_id FROM ApplicationDetail WHERE applicant_id = %s AND cv_path = %s",
+                (applicant_id, full_pdf_path)
+            )
+
+            if application_exists:
+                print(f"  [Info] ApplicationDetail for this CV already exists (detail_id={application_exists[0]}). Skipping.")
+            
+            else:
                 application_role_val = fake.job() if fake.boolean(chance_of_getting_true=75) else None
-
+                
                 print(f"  [Info] Creating new ApplicationDetail for applicant_id={applicant_id}")
                 detail_id = insert_application_detail(
                     applicant_id=applicant_id,
                     cv_path=full_pdf_path,
-                    application_role=application_role_val, # Changed from position
-                    applied_date=date.today() # Defaulting to today
+                    application_role=application_role_val,
+                    applied_date=date.today()
                 )
-                if detail_id is None:
-                     print(f"  [ERROR] Failed to insert ApplicationDetail for applicant_id {applicant_id}, received None ID.")
-                     continue
-                print(f"  [Insert] New ApplicationDetail created: detail_id={detail_id}, cv_path='{full_pdf_path}'")
-                file_count += 1
-            except Exception as e:
-                print(f"  [ERROR] Failed to insert ApplicationDetail for applicant_id {applicant_id}: {e}")
-                continue # Skip to the next file
-        else:
-            print(f"  [Warning] Skipping ApplicationDetail for '{filename}' as applicant_id was not determined.")
 
+                if detail_id:
+                    print(f"  [Insert] New ApplicationDetail created: detail_id={detail_id}")
+                    new_applications_created += 1
+                else:
+                    print(f"  [ERROR] Failed to insert ApplicationDetail, received None ID.")
 
-    if processed_files == 0:
-        print(f"[SeedDummy] No PDF files found in {DATA_DIR}.")
-    else:
-        print(f"\n[SeedDummy] Finished processing. Successfully created ApplicationDetail entries for {file_count} out of {processed_files} PDF files found.")
+        except Exception as e:
+            print(f"  [ERROR] Failed to insert ApplicationDetail for applicant_id {applicant_id}: {e}")
+            continue
+
+    print(f"\n[SeedDummy] Finished processing. Processed {total_files_processed} PDF files. Created {new_applications_created} new application entries.")
 
 if __name__ == '__main__':
     print("Starting dummy data seeding process...")
