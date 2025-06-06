@@ -1,12 +1,14 @@
 # MySQL connection logic
 
 import mysql.connector
-from mysql.connector import Error
 from contextlib import contextmanager
 import os
+from dotenv import load_dotenv
+
+# load environment variables
+load_dotenv()
 
 # CONNECTION CONFIGURATION
-
 DB_CONFIG = {
     'host': os.getenv('ATS_DB_HOST', 'localhost'),
     'user': os.getenv('ATS_DB_USER', 'root'),
@@ -19,13 +21,14 @@ DB_CONFIG = {
 # CONNECTION FUNCTION
 def get_db_connection():
     try:
-        conn = mysql.connector.connect(**DB_CONFIG)
+        conn = mysql.connector.Connect(**DB_CONFIG)
         return conn
-    except Error as e:
-        print(f"[Database] Error connecting to MySQL: {e}")
+    except Exception as e:
+        print(f"[Database] Exception connecting to MySQL: {e}")
         return None
 
 # CONTEXT MANAGER FOR CURSOR
+@contextmanager
 def get_db_cursor(commit: bool = True):
     conn = get_db_connection()
     if conn is None:
@@ -37,9 +40,9 @@ def get_db_cursor(commit: bool = True):
         yield cursor
         if commit:
             conn.commit()
-    except Error as e:
+    except Exception as e:
         conn.rollback()
-        print(f"[database.py][get_db_cursor] Error when executing query: {e}")
+        print(f"[database.py][get_db_cursor] Exception when executing query: {e}")
         raise
     finally:
         cursor.close()
@@ -51,7 +54,7 @@ def execute_query(query: str, params: tuple = None):
         if cursor is None:
             raise Exception("Cannot connect to the database.")
         if params:
-            cursor.execute(query, params)
+            cursor.execute(query, params or ())
         else:
             cursor.execute(query)
 
@@ -79,21 +82,10 @@ def fetch_one(query: str, params: tuple = None) -> tuple | None:
 
 # UTILITY FUNCTION TO INSERT AND GET ID
 def insert_and_get_id(query: str, params: tuple = None) -> int:
-    conn = get_db_connection()
-    if conn is None:
-        raise Exception("Cannot connect to the database.")
-    try:
-        cursor = conn.cursor()
-        if params:
-            cursor.execute(query, params)
-        else:
-            cursor.execute(query)
-        conn.commit()
+    with get_db_cursor(commit=True) as cursor:
+        if cursor is None:
+            raise ConnectionError("Cannot connect to the database to insert data.")
+        
+        cursor.execute(query, params or ())
+        # cursor.lastrowid is available immediately after execute for an INSERT
         return cursor.lastrowid
-    except Error as e:
-        conn.rollback()
-        print(f"[database.py][insert_and_get_id] Error: {e}\nQuery: {query}")
-        raise
-    finally:
-        cursor.close()
-        conn.close()
