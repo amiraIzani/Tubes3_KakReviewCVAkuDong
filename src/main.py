@@ -43,7 +43,7 @@ if __name__ == "__main__":
     print("[MAIN] Database setup and seeding complete.")
     
     # --- DEFINE TEST PARAMETERS ---
-    keywords_to_search = "software, hardware, sql"
+    keywords_to_search = "engineering, python, software engineering, hardware, sql"
     algorithm_choice = "BM"  # Using Boyer-Moore
     top_n_results = 5
     

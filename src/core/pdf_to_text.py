@@ -38,21 +38,3 @@ def extract_text_from_pdf(pdf_path: str) -> tuple[str | None, str | None]:
     except Exception as e:
         print(f"[pdf_to_text] Error processing PDF file '{pdf_path}': {e}")
         return None, None
-
-# Example usage
-if __name__ == '__main__':
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    sample_pdf_path = os.path.join(project_root, 'data', '10005171.pdf')
-
-    print(f"Attempting to extract text from: {sample_pdf_path}")
-    
-    if os.path.exists(sample_pdf_path):
-        extracted_text = extract_text_from_pdf(sample_pdf_path)
-        if extracted_text:
-            print("\nSuccessfully extracted text (first 500 chars):")
-            print(extracted_text[:500])
-            print(f"\nTotal characters extracted: {len(extracted_text)}")
-        else:
-            print("\nFailed to extract text.")
-    else:
-        print(f"\nTest PDF not found at '{sample_pdf_path}'. Please create it or update the path for testing.")

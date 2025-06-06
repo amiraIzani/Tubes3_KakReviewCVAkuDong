@@ -16,7 +16,16 @@ def get_cv_path(relative_path: str) -> str | None:
     else:
         print(f"Warning: CV file not found at {full_path}")
         return None
+
+def get_all_pdf_filenames() -> list[str]:
+    if not os.path.isdir(DATA_DIR):
+        print(f"Error: Data directory not found at {DATA_DIR}", file=sys.stderr)
+        return []
     
+    # List comprehension to find all files ending with .pdf (case-insensitive)
+    return [f for f in os.listdir(DATA_DIR) if f.lower().endswith('.pdf')]
+
+
 def open_file_with_default_app(filepath: str):
     # Opens a file with system's default application (for "View CV" feature)
     if not filepath or not os.path.exists(filepath):

@@ -1,223 +1,183 @@
-# Logic to rank CVs
-
 import time
-import os
 from collections import defaultdict
 
+# --- Utility, Core, and Model Imports ---
+# Assumes you have file_handler in a utils folder
+from utils.file_handler import get_cv_path
 from core.pdf_to_text import extract_text_from_pdf
 from core.string_matcher import kmp_search, boyer_moore_search, levenshtein_distance
 from core.regex import extract_all_cv_details
+from model.models import fetch_applicant_by_id, fetch_all_cv_details as fetch_all_cv_application_details
 
-from model.models import fetch_applicant_by_id
-from model.models import fetch_all_cv_details as fetch_all_cv_application_details
-
-
-DEFAULT_LEVENSTHEIN_SIMILARITY_THRESHOLD = 0.8
+# --- Configuration ---
+DEFAULT_LEVENSHTEIN_SIMILARITY_THRESHOLD = 0.8
+# A small weight for the frequency bonus to act as a tie-breaker
+FREQUENCY_BONUS_WEIGHT = 0.01
 
 def parse_keywords(keywords_str: str) -> list[str]:
+    """Splits and cleans comma-separated keywords."""
     if not keywords_str:
         return []
     return [kw.strip().lower() for kw in keywords_str.split(",") if kw.strip()]
 
-def calculate_levensthein_similarity(s1: str, s2: str) -> float:
-    if not s1 and not s2:
-        return 1.0
-    if not s1 or not s2:
-        return 0.0
+def calculate_levenshtein_similarity(s1: str, s2: str) -> float:
+    # Calculates similarity score (0.0 to 1.0) based on Levenshtein distance.
+    if not s1 and not s2: return 1.0
+    if not s1 or not s2: return 0.0
     max_len = max(len(s1), len(s2))
-    if max_len == 0:
-        return 1.0
+    if max_len == 0: return 1.0
     
     distance = levenshtein_distance(s1, s2)
     return 1.0 - (distance / max_len)
 
 def perform_search(
         keywords_str: str,
-        algorithm_choice: str,  # "KMP" or "BM"
+        algorithm_choice: str,
         top_n: int,
-        levenshtein_similarity_threshold: float = DEFAULT_LEVENSTHEIN_SIMILARITY_THRESHOLD
+        levenshtein_similarity_threshold: float = DEFAULT_LEVENSHTEIN_SIMILARITY_THRESHOLD
 ) -> tuple[list[dict], dict[str, float | str]]:
-    start_total_time = time.perf_counter()
-
-    if algorithm_choice == "KMP":
-        search_fn = kmp_search
-    elif algorithm_choice == "BM":
-        search_fn = boyer_moore_search
-    else:
-        raise ValueError(f"Invalid algorithm choice: {algorithm_choice}. Must be 'KMP' or 'BM'.")
     
+    total_timer_start = time.perf_counter()
+    
+    # Initial Setup and Data Loading
+    search_fn = kmp_search if algorithm_choice.upper() == "KMP" else boyer_moore_search
     input_keywords = parse_keywords(keywords_str)
-    if not input_keywords:
-        end_total_time = time.perf_counter()
-        return [], {
-            'exact_match_time': 0,
-            'fuzzy_match_time': 0,
-            'total_processing_time': end_total_time - start_total_time,
-            "cvs_processed": 0,
-            "status_message": "No keywords provided."
-        }
     
-    # Fetch all CV data
+    if not input_keywords:
+        return [], {'status_message': "No keywords provided.", 'total_processing_time': 0}
+
     all_cv_applications = fetch_all_cv_application_details()
     if not all_cv_applications:
-        end_total_time = time.perf_counter()
-        return [], {
-            'exact_match_time': 0,
-            'fuzzy_match_time': 0,
-            'total_processing_time': end_total_time - start_total_time,
-            "cvs_processed": 0,
-            "status_message": "No CVs found in the database."
-        }
-    
+        return [], {'status_message': "No CVs found in the database.", 'total_processing_time': 0}
+
+    # Prepare CV data and pre-extract all text
     cv_data_for_processing = []
+    cv_texts = {}
     applicant_cache = {}
     for app_detail_row in all_cv_applications:
         applicant_id = app_detail_row[1]
-        cv_path = app_detail_row[3]
+        cv_path_from_db = app_detail_row[3]
 
         if applicant_id not in applicant_cache:
             profile = fetch_applicant_by_id(applicant_id)
+            name = "Unnamed Applicant"
             if profile:
-                first_name = profile.get("first_name", "")
-                last_name = profile.get("last_name", "")
-                name = f"{first_name} {last_name}".strip() if first_name or last_name else "Unnamed Applicant"
-            else:
-                name = "Unnamed Applicant"
+                first_name, last_name = profile.get("first_name", ""), profile.get("last_name", "")
+                name = f"{first_name} {last_name}".strip() or "Unnamed Applicant"
             applicant_cache[applicant_id] = name
-        else:
-            name = applicant_cache[applicant_id]
         
-        cv_data_for_processing.append({
-            'applicant_id': applicant_id,
-            'detail_id': app_detail_row[0],
-            'name': name,
-            'cv_path': cv_path,
-        })
+        full_cv_path = get_cv_path(cv_path_from_db)
+        if full_cv_path:
+            cv_data_for_processing.append({
+                'applicant_id': applicant_id, 'detail_id': app_detail_row[0],
+                'name': applicant_cache[applicant_id], 'cv_path': cv_path_from_db,
+            })
+            _, pm_text = extract_text_from_pdf(full_cv_path)
+            cv_texts[applicant_id] = {'pm': (pm_text or "").lower()}
 
-    # Pre‐extract all CV texts once
-    cv_texts_raw = {}
+    # This dictionary will hold all match data before final scoring
+    results_in_progress = {}
+    
+    # EXACT MATCHING
+    exact_timer_start = time.perf_counter()
     for cv_info in cv_data_for_processing:
-        raw_text, pm_text = extract_text_from_pdf(cv_info['cv_path'])
-        # raw_text for regex, pm_text for pattern matching
-        cv_texts_raw[cv_info['applicant_id']] = {
-            'raw': raw_text or "",
-            'pm': pm_text or ""
-        }
-
-    results = []
-    cvs_processed_count = 0
-
-    # ----- EXACT MATCHING -----
-
-    start_exact_time = time.perf_counter()
-    cv_unmatched_keywords = {}
-
-    for cv_info in cv_data_for_processing:
-        cvs_processed_count += 1
         applicant_id = cv_info['applicant_id']
-        cv_pm_text = cv_texts_raw[applicant_id]['pm']
-
-        if not cv_pm_text:
-            cv_unmatched_keywords[applicant_id] = set(input_keywords)
-            continue
+        cv_pm_text = cv_texts.get(applicant_id, {}).get('pm', '')
+        if not cv_pm_text: continue
 
         matched_details = defaultdict(int)
-        matched_unique = set()
-
         for keyword in input_keywords:
             occurrences = search_fn(cv_pm_text, keyword)
             if occurrences:
-                matched_details[keyword] += len(occurrences)
-                matched_unique.add(keyword)
+                matched_details[keyword] = len(occurrences)
         
-        if matched_unique:
-            unmatched = set(input_keywords) - matched_unique
-            results.append({
-                'applicant_id': applicant_id,
-                'detail_id': cv_info['detail_id'],
-                'name': cv_info['name'],
-                'cv_path': cv_info['cv_path'],
-                'matched_keywords_count': len(matched_unique),
-                'matched_keywords_details': dict(matched_details),
-                'score': len(matched_unique)
-            })
-            cv_unmatched_keywords[applicant_id] = unmatched
-        else:
-            cv_unmatched_keywords[applicant_id] = set(input_keywords)
+        if matched_details:
+            results_in_progress[applicant_id] = {
+                'applicant_id': applicant_id, 'detail_id': cv_info['detail_id'],
+                'name': cv_info['name'], 'cv_path': cv_info['cv_path'],
+                'matched_keywords_details': matched_details
+            }
+    exact_match_duration = time.perf_counter() - exact_timer_start
 
-    end_exact_time = time.perf_counter()
-    exact_match_duration = end_exact_time - start_exact_time
-
-    # ----- FUZZY MATCHING -----
-    start_fuzzy_time = time.perf_counter()
+    # FUZZY MATCHING
+    fuzzy_timer_start = time.perf_counter()
     fuzzy_match_performed = False
-
-    results_map = {res['applicant_id']: res for res in results}
 
     for cv_info in cv_data_for_processing:
         applicant_id = cv_info['applicant_id']
-        unmatched_keywords = cv_unmatched_keywords.get(applicant_id, set())
-        if not unmatched_keywords:
-            continue
+        current_result = results_in_progress.get(applicant_id)
+        
+        exact_matches = set(current_result['matched_keywords_details'].keys()) if current_result else set()
+        unmatched_keywords = set(input_keywords) - exact_matches
+        if not unmatched_keywords: continue
 
-        cv_words = cv_texts_raw[applicant_id]['pm'].lower().split()
-        if not cv_words:
-            continue
+        cv_words = cv_texts.get(applicant_id, {}).get('pm', '').split()
+        if not cv_words: continue
 
-        fuzzy_added = False
         for keyword in unmatched_keywords:
-            max_dist = int((1.0 - levenshtein_similarity_threshold) * len(keyword))
+            best_similarity = 0.0
             for word in cv_words:
-                if levenshtein_distance(keyword, word) <= max_dist:
-                    fuzzy_added = True
-                    break
-            if not fuzzy_added:
-                continue
+                similarity = calculate_levenshtein_similarity(keyword, word)
+                if similarity >= levenshtein_similarity_threshold and similarity > best_similarity:
+                    best_similarity = similarity
+            
+            if best_similarity > 0:
+                fuzzy_match_performed = True
+                fuzzy_key = f"{keyword} (fuzzy ~{int(best_similarity*100)}%)"
 
-            fuzzy_match_performed = True
-            if applicant_id in results_map:
-                entry = results_map[applicant_id]
-                fuzzy_key = f"{keyword} (fuzzy)"
-                if fuzzy_key not in entry['matched_keywords_details']:
-                    entry['matched_keywords_count'] += 1
-                    entry['score'] += 0.5
-                    entry['matched_keywords_details'][fuzzy_key] = 1
-            else:
-                new_entry = {
-                    'applicant_id': applicant_id,
-                    'detail_id': cv_info['detail_id'],
-                    'name': cv_info['name'],
-                    'cv_path': cv_info['cv_path'],
-                    'matched_keywords_count': 1,
-                    'matched_keywords_details': {f"{keyword} (fuzzy)": 1},
-                    'score': 0.5
-                }
-                results.append(new_entry)
-                results_map[applicant_id] = new_entry
+                if applicant_id not in results_in_progress:
+                    results_in_progress[applicant_id] = {
+                        'applicant_id': applicant_id, 'detail_id': cv_info['detail_id'],
+                        'name': cv_info['name'], 'cv_path': cv_info['cv_path'],
+                        'matched_keywords_details': defaultdict(float)
+                    }
+                
+                # Store the similarity score as the value for the fuzzy match
+                results_in_progress[applicant_id]['matched_keywords_details'][fuzzy_key] = best_similarity
+    
+    fuzzy_match_duration = (time.perf_counter() - fuzzy_timer_start) if fuzzy_match_performed else 0.0
 
+    # FINAL SCORING & RANKING
+    final_results = list(results_in_progress.values())
 
-    end_fuzzy_time = time.perf_counter()
-    fuzzy_match_duration = end_fuzzy_time - start_fuzzy_time if fuzzy_match_performed else 0
+    for result in final_results:
+        details = result['matched_keywords_details']
+        
+        exact_matches = {k: v for k, v in details.items() if not k.endswith(')')}
+        fuzzy_matches = {k: v for k, v in details.items() if k.endswith(')')}
 
-    # ----- RANK RESULTS -----
-    results.sort(key=lambda x: x['score'], reverse=True)
-    top_results = results[:top_n]
+        # Main score from unique keywords (1 point per exact, similarity score per fuzzy)
+        score = (len(exact_matches) * 1.0) + sum(fuzzy_matches.values())
+        
+        # Add a small tie-breaker bonus based on the frequency of exact matches
+        frequency_bonus = sum(exact_matches.values()) * FREQUENCY_BONUS_WEIGHT
+        result['score'] = score + frequency_bonus
+        
+        result['matched_keywords_count'] = len(details)
+        result['matched_keywords_details'] = dict(details)
 
-    end_total_time = time.perf_counter()
+    final_results.sort(key=lambda x: x.get('score', 0), reverse=True)
+    top_results = final_results[:top_n]
 
+    total_processing_time = time.perf_counter() - total_timer_start
     timing_info = {
-        'exact_match_time': exact_match_duration,
-        'fuzzy_match_time': fuzzy_match_duration,
-        'total_processing_time': end_total_time - start_total_time,
-        "cvs_processed": cvs_processed_count,
-        'status_message': f"Search complete. Found {len(results)} potential matches." if results else "No relevant CVs found."
+        'exact_match_time': round(exact_match_duration, 4),
+        'fuzzy_match_time': round(fuzzy_match_duration, 4),
+        'total_processing_time': round(total_processing_time, 4),
+        "cvs_processed": len(cv_data_for_processing),
+        'status_message': f"Search complete. Found {len(final_results)} potential matches."
     }
 
     return top_results, timing_info
-    
 
 def get_cv_summary_details(cv_path: str) -> dict | None:
-    raw_text, _ = extract_text_from_pdf(cv_path)
+    """Extracts detailed structured information for the summary page."""
+    full_path = get_cv_path(cv_path)
+    if not full_path:
+        return None
+    
+    raw_text, _ = extract_text_from_pdf(full_path)
     if raw_text is None:
         return None
+        
     return extract_all_cv_details(raw_text)

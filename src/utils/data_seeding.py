@@ -9,6 +9,8 @@ from model.models import (
 
 from model.database import fetch_one
 
+from utils.file_handler import get_all_pdf_filenames, get_cv_path
+
 fake = Faker()
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,14 +26,9 @@ def _split_name(full_name: str) -> tuple[str | None, str | None]:
     return first_name, last_name
 
 def seed_with_dummy_data():
-    if not os.path.isdir(DATA_DIR):
-        print(f"[SeedDummy] Data folder is not found: {DATA_DIR}")
-        return
-
-    print(f"[SeedDummy] Looking for PDF files in: {DATA_DIR}")
+    print(f"[SeedDummy] Looking for PDF files...")
     
-    # Get a list of all PDF files first
-    pdf_files = [f for f in os.listdir(DATA_DIR) if f.lower().endswith('.pdf')]
+    pdf_files = get_all_pdf_filenames()
     
     if not pdf_files:
         print("[SeedDummy] No PDF files found to process.")
@@ -43,7 +40,10 @@ def seed_with_dummy_data():
     for filename in pdf_files:
         total_files_processed += 1
         identifier = filename[:-4]
-        full_pdf_path = os.path.join(DATA_DIR, filename)
+        full_pdf_path = get_cv_path(filename)
+        if not full_pdf_path:
+            print(f"\n[SeedDummy] Skipping file {filename} because path could not be resolved.")
+            continue
         
         print(f"\n[SeedDummy] Processing file ({total_files_processed}/{len(pdf_files)}): {filename}")
 
