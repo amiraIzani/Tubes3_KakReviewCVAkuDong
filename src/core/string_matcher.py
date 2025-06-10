@@ -1,6 +1,44 @@
 # KMP ALGORITHM
-def kmp_search():
-    pass
+def compute_border(pattern):
+    m = len(pattern)
+    b = [0] * m
+    j = 0
+    i = 1
+    while i < m:
+        if pattern[j] == pattern[i]:
+            b[i] = j + 1
+            i += 1
+            j += 1
+        elif j > 0:
+            j = b[j-1]
+        else:
+            b[i] = 0
+            i += 1
+    return b
+
+def kmp_search(text, pattern):
+    n = len(text)
+    m = len(pattern)
+    b = compute_border(pattern)
+    i = 0
+    j = 0
+    occurrences = []
+
+    while i < n:
+        if pattern[j] == text[i]:
+            if j == m - 1:
+                occurrences.append(i - m + 1)
+                j = b[j] 
+                i += 1
+            else:
+                i += 1
+                j += 1
+        elif j > 0:
+            j = b[j-1]
+        else:
+            i += 1
+    return occurrences
+
 
 # BOOYER-MOORE ALGORITHM
 def build_bad_char_table(pattern:str) -> dict[str, int]:
