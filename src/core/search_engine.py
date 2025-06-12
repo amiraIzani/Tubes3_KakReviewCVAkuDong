@@ -15,7 +15,6 @@ DEFAULT_LEVENSHTEIN_SIMILARITY_THRESHOLD = 0.8
 FREQUENCY_BONUS_WEIGHT = 0.01
 
 def parse_keywords(keywords_str: str) -> list[str]:
-    """Splits and cleans comma-separated keywords."""
     if not keywords_str:
         return []
     return [kw.strip().lower() for kw in keywords_str.split(",") if kw.strip()]
@@ -171,7 +170,7 @@ def perform_search(
     return top_results, timing_info
 
 def get_cv_summary_details(cv_path: str) -> dict | None:
-    """Extracts detailed structured information for the summary page."""
+    # Extracts detailed structured information for the summary page.
     full_path = get_cv_path(cv_path)
     if not full_path:
         return None

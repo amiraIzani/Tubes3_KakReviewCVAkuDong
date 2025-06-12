@@ -41,7 +41,7 @@ def kmp_search(text, pattern):
 
 
 # BOOYER-MOORE ALGORITHM
-def build_bad_char_table(pattern:str) -> dict[str, int]:
+def build_last_occurence_table(pattern:str) -> dict[str, int]:
     table = {}
     for i, char in enumerate(pattern):
         table[char] = i
@@ -53,7 +53,7 @@ def boyer_moore_search(text: str, pattern: str) -> list[int]:
 
     n = len(text)
     m = len(pattern)
-    bad_char_table = build_bad_char_table(pattern)
+    bad_char_table = build_last_occurence_table(pattern)
     occurrences = []
 
     s = 0
