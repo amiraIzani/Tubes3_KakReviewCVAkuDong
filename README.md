@@ -54,13 +54,13 @@ Follow these steps to set up and run the application on your local machine.
     ```
     Next, open the newly created `.env` file in a text editor and **enter your local MySQL password** for the `ATS_DB_PASS` variable.
 
-6.  **Perform the one-time database setup:**
-    - Open a MySQL client (like MySQL Workbench) and run this command to create the database:
-        ```sql
-        CREATE DATABASE IF NOT EXISTS ats_db;
-        ```
+6.  **Perform database setup:**
+    In the src/ directory run db_setup.py
+    ```bash
+    python db_setup.py
+    ```
 7. 
-    In the src/ directory, run the main script to create the tables, seed the initial data in the terminal, and rank the CVs from data/:
+    After the db is initialized successfully, in the src/ directory, run the main script to create the tables, seed the initial data in the terminal, and rank the CVs from data/:
     ```bash
     python main.py
     ```
