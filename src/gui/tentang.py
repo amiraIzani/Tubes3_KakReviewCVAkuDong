@@ -21,27 +21,9 @@ def TentangPage(page: ft.Page):
                                 alignment=ft.MainAxisAlignment.CENTER,
                                 spacing=200, # jarak antar tombol
                                 controls=[
-                                    ft.TextButton(
-                                        "Homepage",
-                                        style=ft.ButtonStyle(
-                                            text_style=ft.TextStyle(size=20)
-                                        ),
-                                        on_click=lambda _: page.go("/")
-                                    ),
-                                    ft.TextButton(
-                                        "Pencarian",
-                                        style=ft.ButtonStyle(
-                                            text_style=ft.TextStyle(size=20)
-                                        ),
-                                        on_click=lambda _: page.go("/pencarian")
-                                    ),
-                                    ft.TextButton(
-                                        "Tentang Kru",
-                                        style=ft.ButtonStyle(
-                                            text_style=ft.TextStyle(size=20)
-                                        ),
-                                        on_click=lambda _: page.go("/tentang")
-                                    ),
+                                    ft.TextButton("Homepage", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/")),
+                                    ft.TextButton("Pencarian", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/pencarian")),
+                                    ft.TextButton("Tentang Kru", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/tentang"))
                                 ]
                             )
                         ),
