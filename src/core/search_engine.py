@@ -9,25 +9,21 @@ from core.string_matcher import kmp_search, boyer_moore_search, levenshtein_dist
 from core.regex import extract_all_cv_details
 from model.models import fetch_applicant_by_id, fetch_all_cv_details as fetch_all_cv_application_details
 
+# --- Algorithm Imports ---
+from algorithms.kmp import KMP
+from algorithms.bm import BoyerMoore
+from algorithms.aho_corasick import AhoCorasick
+from algorithms.levenshtein import calculate_levenshtein_similarity
+
 # --- Configuration ---
 DEFAULT_LEVENSHTEIN_SIMILARITY_THRESHOLD = 0.8
-# A small weight for the frequency bonus to act as a tie-breaker
 FREQUENCY_BONUS_WEIGHT = 0.01
+
 
 def parse_keywords(keywords_str: str) -> list[str]:
     if not keywords_str:
         return []
     return [kw.strip().lower() for kw in keywords_str.split(",") if kw.strip()]
-
-def calculate_levenshtein_similarity(s1: str, s2: str) -> float:
-    # Calculates similarity score (0.0 to 1.0) based on Levenshtein distance.
-    if not s1 and not s2: return 1.0
-    if not s1 or not s2: return 0.0
-    max_len = max(len(s1), len(s2))
-    if max_len == 0: return 1.0
-    
-    distance = levenshtein_distance(s1, s2)
-    return 1.0 - (distance / max_len)
 
 def perform_search(
         keywords_str: str,
@@ -38,8 +34,6 @@ def perform_search(
     
     total_timer_start = time.perf_counter()
     
-    # Initial Setup and Data Loading
-    search_fn = kmp_search if algorithm_choice.upper() == "KMP" else boyer_moore_search
     input_keywords = parse_keywords(keywords_str)
     
     if not input_keywords:
@@ -77,25 +71,51 @@ def perform_search(
     # This dictionary will hold all match data before final scoring
     results_in_progress = {}
     
-    # EXACT MATCHING
+    # --- EXACT MATCHING ---
     exact_timer_start = time.perf_counter()
-    for cv_info in cv_data_for_processing:
-        applicant_id = cv_info['applicant_id']
-        cv_pm_text = cv_texts.get(applicant_id, {}).get('pm', '')
-        if not cv_pm_text: continue
 
-        matched_details = defaultdict(int)
-        for keyword in input_keywords:
-            occurrences = search_fn(cv_pm_text, keyword)
-            if occurrences:
-                matched_details[keyword] = len(occurrences)
-        
-        if matched_details:
-            results_in_progress[applicant_id] = {
-                'applicant_id': applicant_id, 'detail_id': cv_info['detail_id'],
-                'name': cv_info['name'], 'cv_path': cv_info['cv_path'],
-                'matched_keywords_details': matched_details
-            }
+    # AHO-CORASICK LOGIC
+    if algorithm_choice.upper() == "AC":
+        # Build the automaton once with all keywords
+        automaton = AhoCorasick(input_keywords)
+        for cv_info in cv_data_for_processing:
+            applicant_id = cv_info['applicant_id']
+            cv_pm_text = cv_texts.get(applicant_id, {}).get('pm', '')
+            if not cv_pm_text: continue
+            
+            # Search once per CV, get all keyword matches
+            found_keywords = automaton.search(cv_pm_text)
+            if found_keywords:
+                # Convert the result to the same format as our other algorithms
+                matched_details = {kw: len(indices) for kw, indices in found_keywords.items()}
+                results_in_progress[applicant_id] = {
+                    'applicant_id': applicant_id, 'detail_id': cv_info['detail_id'],
+                    'name': cv_info['name'], 'cv_path': cv_info['cv_path'],
+                    'matched_keywords_details': defaultdict(int, matched_details)
+                }
+
+    # KMP / BOYER-MOORE LOGIC
+    else:
+        SearcherClass = KMP if algorithm_choice.upper() == "KMP" else BoyerMoore
+        for cv_info in cv_data_for_processing:
+            applicant_id = cv_info['applicant_id']
+            cv_pm_text = cv_texts.get(applicant_id, {}).get('pm', '')
+            if not cv_pm_text: continue
+
+            matched_details = defaultdict(int)
+            for keyword in input_keywords:
+                searcher = SearcherClass(keyword)
+                occurrences = searcher.search(cv_pm_text)
+                if occurrences:
+                    matched_details[keyword] = len(occurrences)
+            
+            if matched_details:
+                results_in_progress[applicant_id] = {
+                    'applicant_id': applicant_id, 'detail_id': cv_info['detail_id'],
+                    'name': cv_info['name'], 'cv_path': cv_info['cv_path'],
+                    'matched_keywords_details': matched_details
+                }
+    
     exact_match_duration = time.perf_counter() - exact_timer_start
 
     # FUZZY MATCHING
