@@ -5,7 +5,6 @@ from collections import defaultdict
 # Assumes you have file_handler in a utils folder
 from utils.file_handler import get_cv_path
 from core.pdf_to_text import extract_text_from_pdf
-from core.string_matcher import kmp_search, boyer_moore_search, levenshtein_distance
 from core.regex import extract_all_cv_details
 from model.models import fetch_applicant_by_id, fetch_all_cv_details as fetch_all_cv_application_details
 
