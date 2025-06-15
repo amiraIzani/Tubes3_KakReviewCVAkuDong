@@ -48,7 +48,7 @@ Follow these steps to set up and run the application on your local machine. **Al
     pip install -r requirements.txt
     ```
 
-4.  **Make the folder data/ and fill it with CV data** 
+4.  **Make the folder data/ and fill it with CV .pdf files** 
 
 5.  **Perform the One-Time Database Setup:**
     This script will create the database, a secure user for the app, and the `.env` file.
