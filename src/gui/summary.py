@@ -18,7 +18,7 @@ def SummaryPage(data: dict, page: ft.Page):
         search_timings = page.session.get("search_timings")
         
         if search_results is not None and search_timings is not None:
-            from gui.hasilPencarian import ResultPage
+            from ..gui.hasilPencarian import ResultPage
             page.views.append(ResultPage(search_results, search_timings, page))
             page.update()
         else:

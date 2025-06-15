@@ -75,7 +75,6 @@ def TentangPage(page: ft.Page):
                                                         controls=[
                                                             ft.Text("Asybel B. P. Sianipar", size=20, weight=ft.FontWeight.BOLD),
                                                             ft.Text("Arsitektur 2023\n"),
-                                                            ft.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis convallis, augue vel consectetur ullamcorper.")
                                                         ]
                                                     )
                                                 )
@@ -95,7 +94,6 @@ def TentangPage(page: ft.Page):
                                                         controls=[
                                                             ft.Text("Samantha Laqueenna G.", size=20, weight=ft.FontWeight.BOLD),
                                                             ft.Text("Teknik Informatika 2023\n"),
-                                                            ft.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis convallis, augue vel consectetur ullamcorper.")
                                                         ]
                                                     )
                                                 )
@@ -115,7 +113,6 @@ def TentangPage(page: ft.Page):
                                                         controls=[
                                                             ft.Text("Amira Izani", size=20, weight=ft.FontWeight.BOLD),
                                                             ft.Text("Teknik Informatika 2023\n"),
-                                                            ft.Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis convallis, augue vel consectetur ullamcorper.")
                                                         ]
                                                     )
                                                 )
