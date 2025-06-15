@@ -1,12 +1,21 @@
 import flet as ft
 import os
 from utils.file_handler import open_file_with_default_app
+from core.regex import extract_all_cv_details
+from core.pdf_to_text import extract_text_from_pdf
 
 def ResultPage(results: list[dict], timings: dict, page: ft.Page):
     text_color = "white" if page.theme_mode == "dark" else "black"
 
     # Komponen card CV
     def build_cv_card(match: dict):
+        def on_summary_click():
+            text = extract_text_from_pdf(os.path.join("data", match.get("cv_path", "")))[0] or ""
+            print(f"Current CV path: {match.get('cv_path', '')}")
+            summary_data = extract_all_cv_details(text)
+            page.session.set("summary_data", summary_data)
+            page.go("/summary")
+
         return ft.Container(
             width=300,
             height=320,
@@ -35,7 +44,7 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
                         spacing=10,
                         controls=[
                             ft.TextButton(
-                                on_click=lambda _: print(f"Summary for {match['name']}"),
+                                on_click=lambda _: on_summary_click(),
                                 style=ft.ButtonStyle(
                                 bgcolor="#ffffff",
                                 padding=ft.padding.symmetric(horizontal=20, vertical=10),
