@@ -57,6 +57,15 @@ def PencarianPage(page: ft.Page):
             top_n=jumlah_int
         )
 
+        page.session.set("search_results", top_results)
+        page.session.set("search_timings", timing_info)
+        
+        page.session.set("search_params", {
+            "keywords": keyword,
+            "top_n": jumlah_int,
+            "algorithm": algo
+        })
+
         search_status_text.current.value = ""
         page.views.append(ResultPage(top_results, timing_info, page))
         page.update()

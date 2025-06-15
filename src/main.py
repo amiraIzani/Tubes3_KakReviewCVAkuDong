@@ -39,7 +39,10 @@ def main(page: ft.Page):
     page.update()
 
     def route_change(route):
+        print(f"[ROUTING] Route changed to: {route}")
+        
         page.views.clear()
+        
         if page.route == "/":
             page.views.append(HomePage(page))
         elif page.route == "/pencarian":
@@ -48,13 +51,34 @@ def main(page: ft.Page):
             page.views.append(TentangPage(page))
         elif page.route == "/summary":
             summary_data = page.session.get("summary_data")
+            
             if summary_data is None:
-                summary_data = {}
+                print("[ROUTING] No summary data found, redirecting to pencarian")
+                page.go("/pencarian")
+                return
+            
             page.views.append(SummaryPage(summary_data, page))
+        else:
+            print(f"[ROUTING] Unknown route: {route}, redirecting to home")
+            page.go("/")
+            return
+            
         page.update()
 
+    def view_pop(view):
+        print(f"[ROUTING] View popped: {view}")
+        if len(page.views) > 1:
+            page.views.pop()
+            top_view = page.views[-1] if page.views else None
+            if top_view:
+                page.go(top_view.route)
+        else:
+            page.go("/")
+
     page.on_route_change = route_change
-    page.go(page.route)
+    page.on_view_pop = view_pop
+    
+    page.go(page.route if page.route else "/")
 
 if __name__ == "__main__":
     # 1. First, run the backend setup and data seeding.
@@ -63,4 +87,3 @@ if __name__ == "__main__":
     # 2. After setup is complete, launch the Flet GUI application.
     print("[MAIN] Launching GUI application...")
     ft.app(target=main)
-    

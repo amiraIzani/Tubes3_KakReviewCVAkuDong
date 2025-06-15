@@ -10,11 +10,32 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
     # Komponen card CV
     def build_cv_card(match: dict):
         def on_summary_click():
-            text = extract_text_from_pdf(os.path.join("data", match.get("cv_path", "")))[0] or ""
-            print(f"Current CV path: {match.get('cv_path', '')}")
-            summary_data = extract_all_cv_details(text)
-            page.session.set("summary_data", summary_data)
-            page.go("/summary")
+            try:
+                cv_path = match.get("cv_path", "")
+                full_path = os.path.join("data", cv_path)
+                
+                print(f"Current CV path: {cv_path}")
+                print(f"Full path: {full_path}")
+                
+                text = extract_text_from_pdf(full_path)[0] or ""
+                
+                if not text.strip():
+                    print("Warning: Extracted text is empty")
+                    return
+                
+                summary_data = extract_all_cv_details(text)
+                print(f"Summary data extracted: {summary_data}")
+                
+                if page.session.contains_key("summary_data"):
+                    page.session.remove("summary_data")
+                page.session.set("summary_data", summary_data)
+                
+                page.go("/summary")
+                
+            except Exception as e:
+                print(f"Error in on_summary_click: {e}")
+                import traceback
+                traceback.print_exc()
 
         return ft.Container(
             width=300,
@@ -44,7 +65,7 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
                         spacing=10,
                         controls=[
                             ft.TextButton(
-                                on_click=lambda _: on_summary_click(),
+                                on_click=lambda _, match_data=match: on_summary_click(),
                                 style=ft.ButtonStyle(
                                 bgcolor="#ffffff",
                                 padding=ft.padding.symmetric(horizontal=20, vertical=10),
@@ -59,7 +80,7 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
                                 )
                             ),
                             ft.TextButton(
-                                on_click=lambda _: open_file_with_default_app(os.path.join("data", match.get("cv_path", ""))),
+                                on_click=lambda _, path=match.get("cv_path", ""): open_file_with_default_app(os.path.join("data", path)),
                                 style=ft.ButtonStyle(
                                 bgcolor="#ffffff",
                                 padding=ft.padding.symmetric(horizontal=20, vertical=10),
@@ -94,6 +115,7 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
         spacing=5,
         controls=[
             ft.Text("Hasil Pencarian 🔍", size=45, weight=ft.FontWeight.BOLD),
+            ft.Text(f"{len(results)} CV ditemukan!", size=18, color="#36618E", weight=ft.FontWeight.W_600),
             ft.Text(
                 f"Exact Match: {timings.get('cvs_processed', 0)} CVs di-scan dalam {timings.get('exact_match_time', '0')}s.\n"
                 f"Fuzzy Match: {timings.get('cvs_processed', 0)} CVs di-scan dalam {timings.get('fuzzy_match_time', '0')}s.",
