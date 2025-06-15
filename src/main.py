@@ -1,5 +1,3 @@
-# RUN DARI ROOT DIRECTORY SUPAYA BISA IMPORT FONTNYA
-
 import flet as ft
 import os
 from gui.home import HomePage
@@ -34,6 +32,9 @@ def main(page: ft.Page):
 
     page.title = "Kak, Review CV Aku Dong!"
     page.theme = ft.Theme(font_family="OSO-Regular")
+    page.theme_mode = ft.ThemeMode.LIGHT  # Force light mode
+    page.bgcolor = "#F9FBFD"
+    page.scroll = "auto"
     page.update()
 
     def route_change(route):
@@ -56,3 +57,4 @@ if __name__ == "__main__":
     # 2. After setup is complete, launch the Flet GUI application.
     print("[MAIN] Launching GUI application...")
     ft.app(target=main)
+    

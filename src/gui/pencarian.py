@@ -6,15 +6,25 @@ from gui.hasilPencarian import ResultPage
 def PencarianPage(page: ft.Page):
     FIELD_WIDTH = 550
 
-    # Komponen input
-    keywords_to_search = ft.TextField(label="Contoh: python, react, sql", width=FIELD_WIDTH)
-    top_n_results = ft.TextField(label="Contoh: 12", width=FIELD_WIDTH, input_filter=ft.NumbersOnlyInputFilter())
+    keywords_to_search = ft.TextField(
+        label="Contoh: python, react, sql",
+        width=FIELD_WIDTH,
+        border_color="#36618E"
+    )
+    top_n_results = ft.TextField(
+        label="Contoh: 12",
+        width=FIELD_WIDTH,
+        input_filter=ft.NumbersOnlyInputFilter(),
+        border_color="#36618E"
+    )
     algorithm_choice = ft.Dropdown(
         label="Pilih Algoritma",
         width=FIELD_WIDTH,
+        border_color="#36618E",
         options=[
             ft.dropdown.Option("KMP"),
-            ft.dropdown.Option("BM")
+            ft.dropdown.Option("BM"),
+            ft.dropdown.Option("AC"),
         ]
     )
 
@@ -24,7 +34,7 @@ def PencarianPage(page: ft.Page):
     # Event handler
     def handle_search(e):
         search_status_text.current.value = "Kami sedang searching nih kak... Ditunggu sebentar ya!"
-        search_status_text.current.color = "blue"
+        search_status_text.current.color = "#36618E"
         page.update()
         
         keyword = keywords_to_search.value.strip()
@@ -71,7 +81,7 @@ def PencarianPage(page: ft.Page):
                                 alignment=ft.MainAxisAlignment.CENTER,
                                 spacing=200,
                                 controls=[
-                                    ft.TextButton("Homepage", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/")),
+                                    ft.TextButton("Beranda", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/")),
                                     ft.TextButton("Pencarian", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/pencarian")),
                                     ft.TextButton("Tentang Kru", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/tentang"))
                                 ]
@@ -112,15 +122,20 @@ def PencarianPage(page: ft.Page):
                                             algorithm_choice,
 
                                             ft.Container(height=15),
-                                            ft.ElevatedButton(
-                                                bgcolor="000000",
+                                            ft.TextButton(
+                                                on_click=handle_search,
                                                 style=ft.ButtonStyle(
-                                                    shape=ft.RoundedRectangleBorder(radius=30),
-                                                    elevation=2,
-                                                    padding=ft.padding.symmetric(horizontal=30, vertical=20)
+                                                    bgcolor="#E8EDF6",
+                                                    padding=ft.padding.symmetric(horizontal=50, vertical=20),
+                                                    shape=ft.RoundedRectangleBorder(radius=50),
+                                                    elevation=3,
+                                                    side=ft.BorderSide(1, "#36618E"),
                                                 ),
-                                                content=ft.Text("Cari Sekarang", color="ffffff", size=18),
-                                                on_click=handle_search
+                                                content=ft.Text(
+                                                    "Cari Sekarang!",
+                                                    size=18,
+                                                    color="#36618E"
+                                                )
                                             ),
                                             ft.Text(value="", ref=search_status_text, size=14)
                                         ]
