@@ -1,4 +1,3 @@
-import os
 from dotenv import load_dotenv
 from model.database import get_db_connection, execute_query
 

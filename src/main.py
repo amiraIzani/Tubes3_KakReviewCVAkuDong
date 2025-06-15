@@ -3,7 +3,6 @@ import os
 from gui.home import HomePage
 from gui.pencarian import PencarianPage
 from gui.tentang import TentangPage
-from gui.summary import SummaryPage
 
 from core.search_engine import perform_search
 from model.models import create_tables
@@ -46,11 +45,6 @@ def main(page: ft.Page):
             page.views.append(PencarianPage(page))
         elif page.route == "/tentang":
             page.views.append(TentangPage(page))
-        elif page.route == "/summary":
-            summary_data = page.session.get("summary_data")
-            if summary_data is None:
-                summary_data = {}
-            page.views.append(SummaryPage(summary_data, page))
         page.update()
 
     page.on_route_change = route_change
