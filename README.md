@@ -2,11 +2,11 @@
 
 ## Project Overview
 
-This project is a desktop-based **Applicant Tracking System (ATS)** built for the IF2211 Algorithm Strategy course. The application parses candidate CVs from PDF files and allows a user to search for relevant candidates using keywords. The system then ranks the CVs based on keyword matches found using specific pattern matching algorithms, including a secure encryption method for applicant data.
+Proyek ini adalah sistem **Applicant Tracking System (ATS)** berbasis desktop yang dibuat untuk mata kuliah IF2211 Strategi Algoritma. Aplikasi ini memproses CV kandidat dari file PDF dan memungkinkan pengguna untuk mencari kandidat yang relevan menggunakan kata kunci. Sistem kemudian memberi peringkat CV berdasarkan kecocokan kata kunci yang ditemukan menggunakan algoritma pencocokan pola tertentu, termasuk metode enkripsi yang aman untuk data pelamar.
 
-* **Exact Matching:** Implements **Knuth-Morris-Pratt (KMP)**, **Boyer-Moore (BM)**, and **Aho-Corasick (AC)** for efficient keyword searching.
-* **Fuzzy Matching:** Utilizes the **Levenshtein Distance** to find and rank close matches for misspelled keywords.
-* **Security:** Employs a custom-built **Vigenère Cipher** to encrypt and protect sensitive applicant data in the database.
+* **Exact Matching:** Mengimplementasikan **Knuth-Morris-Pratt (KMP)**, **Boyer-Moore (BM)**, dan **Aho-Corasick (AC)** untuk pencarian kata kunci yang efisien.
+* **Pencocokan Fuzzy:** Menggunakan **Levenshtein Distance** untuk menemukan dan memberi peringkat kecocokan dekat untuk kata kunci yang salah eja.
+* **Keamanan:** Menggunakan **Vigenère Cipher** yang dibuat khusus untuk mengenkripsi dan melindungi data sensitif pelamar dalam basis data.
 
 ## BE & FE
 
@@ -63,10 +63,6 @@ Follow these steps to set up and run the application on your local machine. **Al
 To start the application, run the `main.py` script from the project root directory. This will automatically create the necessary tables and seed the data on the first run.
 ```shell
 python -m src.main
-
-or
-
-python src\main.py
 ```
 
 <br>

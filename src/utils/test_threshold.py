@@ -1,8 +1,3 @@
-# A script to test and find the optimal Levenshtein similarity threshold.
-
-# --- Import only what you need ---
-# You need to make sure Python can find this module.
-# You might need to adjust the path or run with `python -m test_threshold`.
 from algorithms.levenshtein import calculate_levenshtein_similarity
 
 TEST_CASES = {

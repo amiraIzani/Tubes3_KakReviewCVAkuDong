@@ -32,7 +32,7 @@ def _create_database_and_user(cursor, db_name, user, password):
     print("  - Privileges granted.")
 
 def _create_env_file(project_root, db_name, user, password):
-    # Generates the .env file with the application's database credentials.
+    """Generates the .env file with the application's database credentials."""
     env_path = os.path.join(project_root, '.env')
     
     if os.path.exists(env_path):
