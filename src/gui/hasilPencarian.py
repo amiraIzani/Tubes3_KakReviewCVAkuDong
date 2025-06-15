@@ -3,6 +3,8 @@ import os
 from utils.file_handler import open_file_with_default_app
 
 def ResultPage(results: list[dict], timings: dict, page: ft.Page):
+    text_color = "white" if page.theme_mode == "dark" else "black"
+
     # Komponen card CV
     def build_cv_card(match: dict):
         return ft.Container(
@@ -11,52 +13,62 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
             padding=20,
             margin=5,
             border_radius=20,
-            bgcolor="#F2F3FB",
-            border=ft.border.all(1, "black"),
+            bgcolor="#E8EDF6",
+            border=ft.border.all(1, text_color),
             content=ft.Column(
                 spacing=10,
                 expand=True,
                 controls=[
-                    ft.Text(match.get("name", "N/A"), size=20, weight=ft.FontWeight.BOLD),
-                    ft.Text(f"{match.get('matched_keywords_count', 0)} matches", size=14),
+                    ft.Text(match.get("name", "N/A"), size=20, weight=ft.FontWeight.BOLD, color=text_color),
+                    ft.Text(f"{match.get('matched_keywords_count', 0)} matches", size=14, color=text_color),
                     ft.Text(
                         "\nMatched keywords:\n" + "\n".join([
                             f"{k}: {v} occurrence{'s' if v > 1 else ''}"
                             for k, v in match.get("matched_keywords_details", {}).items()
                         ]),
-                        size=13
+                        size=13,
+                        color=text_color
                     ),
-                    ft.Container(
-                        expand=True
-                    ),
+                    ft.Container(expand=True),
                     ft.Row(
                         alignment=ft.MainAxisAlignment.START,
                         spacing=10,
                         controls=[
-                            ft.ElevatedButton(
-                                text="Summary",
+                            ft.TextButton(
                                 on_click=lambda _: print(f"Summary for {match['name']}"),
                                 style=ft.ButtonStyle(
-                                                    shape=ft.RoundedRectangleBorder(radius=30),
-                                                    elevation=2,
-                                                    padding=ft.padding.symmetric(horizontal=10, vertical=10)
-                                                ),
+                                bgcolor="#ffffff",
+                                padding=ft.padding.symmetric(horizontal=20, vertical=10),
+                                shape=ft.RoundedRectangleBorder(radius=30),
+                                elevation=2,
+                                side=ft.BorderSide(1, "#36618E"),
+                                ),
+                                content=ft.Text(
+                                    "Summary",
+                                    size=13,
+                                    color="#36618E"
+                                )
                             ),
-                            ft.ElevatedButton(
-                                text="Lihat CV",
+                            ft.TextButton(
                                 on_click=lambda _: open_file_with_default_app(os.path.join("data", match.get("cv_path", ""))),
                                 style=ft.ButtonStyle(
-                                                    shape=ft.RoundedRectangleBorder(radius=30),
-                                                    elevation=2,
-                                                    padding=ft.padding.symmetric(horizontal=20, vertical=10)
-                                                ),
-                            )
+                                bgcolor="#ffffff",
+                                padding=ft.padding.symmetric(horizontal=20, vertical=10),
+                                shape=ft.RoundedRectangleBorder(radius=30),
+                                elevation=2,
+                                side=ft.BorderSide(1, "#36618E"),
+                                ),
+                                content=ft.Text(
+                                    "Lihat CV",
+                                    size=13,
+                                    color="#36618E"
+                                )
+                            ),
                         ]
                     )
                 ]
             )
         )
-
 
     # Bangun grid: 3 kolom per baris
     rows = []
@@ -64,9 +76,8 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
     for i, match in enumerate(results):
         row.append(build_cv_card(match))
         if (i + 1) % 3 == 0 or i == len(results) - 1:
-            rows.append(ft.Row(controls=row, alignment=ft.MainAxisAlignment.CENTER, spacing=10))  # spacing antar kolom lebih kecil
+            rows.append(ft.Row(controls=row, alignment=ft.MainAxisAlignment.CENTER, spacing=10))
             row = []
-
 
     # Info waktu
     match_info = ft.Column(
@@ -91,7 +102,7 @@ def ResultPage(results: list[dict], timings: dict, page: ft.Page):
             alignment=ft.MainAxisAlignment.CENTER,
             spacing=200,
             controls=[
-                ft.TextButton("Homepage", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/")),
+                ft.TextButton("Beranda", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/")),
                 ft.TextButton("Pencarian", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/pencarian")),
                 ft.TextButton("Tentang Kru", style=ft.ButtonStyle(text_style=ft.TextStyle(size=20, decoration=ft.TextDecoration.UNDERLINE)), on_click=lambda _: page.go("/tentang"))
             ]
