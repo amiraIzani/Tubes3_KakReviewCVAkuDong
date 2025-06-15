@@ -1,8 +1,8 @@
 import flet as ft
 import os
-from utils.file_handler import open_file_with_default_app
-from core.regex import extract_all_cv_details
-from core.pdf_to_text import extract_text_from_pdf
+from ..utils.file_handler import open_file_with_default_app
+from ..core.regex import extract_all_cv_details
+from ..core.pdf_to_text import extract_text_from_pdf
 
 def ResultPage(results: list[dict], timings: dict, page: ft.Page):
     text_color = "white" if page.theme_mode == "dark" else "black"

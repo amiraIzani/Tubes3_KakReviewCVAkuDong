@@ -3,16 +3,16 @@ from collections import defaultdict
 
 # --- Utility, Core, and Model Imports ---
 # Assumes you have file_handler in a utils folder
-from utils.file_handler import get_cv_path
-from core.pdf_to_text import extract_text_from_pdf
-from core.regex import extract_all_cv_details
-from model.models import fetch_applicant_by_id, fetch_all_cv_details as fetch_all_cv_application_details
+from ..utils.file_handler import get_cv_path
+from ..core.pdf_to_text import extract_text_from_pdf
+from ..core.regex import extract_all_cv_details
+from ..model.models import fetch_applicant_by_id, fetch_all_cv_details as fetch_all_cv_application_details
 
 # --- Algorithm Imports ---
-from algorithms.kmp import KMP
-from algorithms.bm import BoyerMoore
-from algorithms.aho_corasick import AhoCorasick
-from algorithms.levenshtein import calculate_levenshtein_similarity
+from ..algorithms.kmp import KMP
+from ..algorithms.bm import BoyerMoore
+from ..algorithms.aho_corasick import AhoCorasick
+from ..algorithms.levenshtein import calculate_levenshtein_similarity
 
 # --- Configuration ---
 DEFAULT_LEVENSHTEIN_SIMILARITY_THRESHOLD = 0.8

@@ -1,13 +1,13 @@
 import flet as ft
 import os
-from gui.home import HomePage
-from gui.pencarian import PencarianPage
-from gui.tentang import TentangPage
-from gui.summary import SummaryPage
+from .gui.home import HomePage
+from .gui.pencarian import PencarianPage
+from .gui.tentang import TentangPage
+from .gui.summary import SummaryPage
 
-from core.search_engine import perform_search
-from model.models import create_tables
-from utils.data_seeding import seed_with_dummy_data
+from .core.search_engine import perform_search
+from .model.models import create_tables
+from .utils.data_seeding import seed_with_dummy_data
 from dotenv import load_dotenv
 
 def initialize_backend():

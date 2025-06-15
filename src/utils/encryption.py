@@ -1,6 +1,3 @@
-# src/utils/cipher.py
-# Implements a custom Vigenère cipher for the encryption bonus task.
-
 import os
 import base64
 from dotenv import load_dotenv

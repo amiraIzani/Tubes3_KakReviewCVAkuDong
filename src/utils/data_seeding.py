@@ -2,14 +2,14 @@ import os
 from datetime import date
 from faker import Faker
 
-from model.models import (
+from ..model.models import (
     insert_applicant_profile,
     insert_application_detail,
 )
 
-from model.database import fetch_one
+from ..model.database import fetch_one
 
-from utils.file_handler import get_all_pdf_filenames, get_cv_path
+from ..utils.file_handler import get_all_pdf_filenames, get_cv_path
 
 fake = Faker()
 

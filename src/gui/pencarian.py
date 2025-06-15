@@ -1,7 +1,7 @@
 import flet as ft
 import json
-from core.search_engine import perform_search
-from gui.hasilPencarian import ResultPage
+from ..core.search_engine import perform_search
+from ..gui.hasilPencarian import ResultPage
 
 def PencarianPage(page: ft.Page):
     FIELD_WIDTH = 550

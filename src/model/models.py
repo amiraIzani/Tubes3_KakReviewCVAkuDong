@@ -1,9 +1,7 @@
-# ApplicantProfile & ApplicationDetail tables
-
 from .database import execute_query, fetch_all, fetch_one, insert_and_get_id
 from datetime import date
 
-from utils.encryption import encrypt, decrypt
+from ..utils.encryption import encrypt, decrypt
 
 # ----------- CREATE TABLE IF NOT EXISTS -----------
 def create_tables():
