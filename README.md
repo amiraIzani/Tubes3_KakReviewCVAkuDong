@@ -48,7 +48,9 @@ Follow these steps to set up and run the application on your local machine. **Al
     pip install -r requirements.txt
     ```
 
-4.  **Perform the One-Time Database Setup:**
+4.  **Make the folder data/ and fill it with CV data** 
+
+5.  **Perform the One-Time Database Setup:**
     This script will create the database, a secure user for the app, and the `.env` file.
     ```shell
     # Run the setup script as a module from the root
@@ -56,7 +58,7 @@ Follow these steps to set up and run the application on your local machine. **Al
     ```
     You will be prompted to enter your MySQL root password.
 
-5.  Your setup is now complete!
+6.  Your setup is now complete!
 
 ## Running the Application
 
